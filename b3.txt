@@ -1,7 +1,7 @@
-
-text <- paste(readLines("reviews.txt"),collapse = " ")
 library(tm)
 library(stringr)
+
+text <- paste(readLines("reviews.txt"),collapse = " ")
 text2 <- stripWhitespace(text)
 text2 <- removeNumbers(text2)
 text2 <- removePunctuation(text2)
