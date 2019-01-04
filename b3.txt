@@ -1,0 +1,36 @@
+
+text <- paste(readLines("reviews.txt"),collapse = " ")
+library(tm)
+library(stringr)
+text2 <- stripWhitespace(text)
+text2 <- removeNumbers(text2)
+text2 <- removePunctuation(text2)
+text2 <- removeWords("9",text2)
+text2
+
+textbag <- str_split(text2,pattern="\\s+")
+class(textbag)
+textbag<- unlist(textbag)
+wordStem(textbag)
+
+#process positive words
+poswords <- paste(readLines("positive-words.txt"),collapse=" ")
+poswords <- str_split(poswords,pattern="\\s+")
+poswords <- unlist(poswords)
+scoreposwords <- sum(!is.na(match(textbag,poswords)))
+
+#process negative words
+negwords <- paste(readLines("negative-words.txt"),collapse = ' ')
+negwords <- str_split(negwords,pattern="\\s+")
+negwords <- unlist(negwords)
+scorenegwords <- sum(!is.na(match(textbag,negwords)))
+
+if(scoreposwords > scorenegwords)
+{
+  print("positive comments are more")
+}else{
+  print("negative comments are more")
+}
+
+score <- abs(scoreposwords - scorenegwords)
+score

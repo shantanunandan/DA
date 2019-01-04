@@ -1,0 +1,33 @@
+library(igraph)
+g = graph(c(1,2,2,3,3,4,4,1),directed=F,n=7)
+#can also be created using names
+
+g <- graph(c("A","B","B","C","C","D","D","A","A","E"),directed=F)
+plot( g,vertex.color="green",vertex.size=25,edge.color="grey20")
+g[]
+
+degree(g,mode="all")
+degree(g,mode="in")
+degree(g,mode="out")
+closeness(g,mode="all",weights = NA)
+betweenness(g,directed=F,weights=NA)
+edge.betweenness(g,directed=F,weights=NA)
+
+
+#clique
+cliques(g,min=NULL,max=NULL)
+clique.number(g)
+clique_num(g)
+
+
+#transitivity
+transitivity(g)
+
+
+#components
+components(g,mode=c("weak","strong"))
+plot(g)
+
+neighborhood.size(g)
+cohesive.blocks(g)
+

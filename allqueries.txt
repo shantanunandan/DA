@@ -1,0 +1,180 @@
+Query1:-
+
+# yarn jar /usr/hdp/current/hadoop-mapreduce-client/hadoop-mapreduce-examples.jar wordcount /file1.txt /out.txt
+
+Query 2:-
+
+# hdfs dfs -ls /out.txt
+
+Query 3:-
+
+# hadoop job -kill job_
+
+Query 4:-
+
+# hadoop job -status 'job_'
+
+Query 5:-
+
+# hadoop job -list all
+
+prgm-3
+
+grunt>mov = load 'ph.csv' using PigStorage(',') as (mid: int, title:chararray,uid: int,ratings:int,recom:chararray,as: int);
+
+grunt>dump mov;
+
+Query 1:-
+
+grunt>Q1 = foreach mov generate($1,$3);
+grunt>dump Q1;
+
+Query2:-
+
+grunt>Q2 = filter mov by $1 == 'Heat (1995)';
+grunt>Q2a = foreach Q2 generate $1,$2,$3;
+grunt>dump Q2a;
+
+Query3:-
+
+Q3 = group mov by(mid,ratings);
+Q3a = filter Q3 by group.$1 is not null;
+Q3b = foreach Q3a generate group.$0,group.$1;
+dump Q3b;
+
+Query4:-
+
+
+Q4 = group mov by(uid,ratings);
+Q4a = filter Q4 by group.$0 is not null;
+Q4b = foreach Q4a generate group.$0,group.$1;
+dump Q4b;
+
+Query 5:-
+
+Q5 = group mov all;
+Q5a = foreach Q5 generate AVG(mov.$3),MAX(mov.$3),min(mov.$3);
+dump Q5a;
+
+prgm4:-
+
+
+grunt>mov = load 'ph.csv' using PigStorage(',') as (mid: int, title:chararray,uid: int,ratings:int,recom:chararray,as: int);
+
+Query 1:-
+
+grunt>Q1 = group mov by mid;
+grunt>Q1a = foreach Q1 generate TOBAG(mov.mid,mov.title);
+grunt>dump Q1a;
+
+
+Query 2:-
+
+# vi a2.pig;
+
+---mov = load 'ph.csv' using PigStorage(',') as (mid: int, title:chararray,uid: int,ratings:int,recom:chararray,as: int);
+
+q2 = group mov all;
+q2a = foreach q2 generate SUM(mov.$3);
+dump q2a;
+
+pig -f a2.pig;
+
+(3372)
+
+Query 3:-
+
+# vi a3.pig
+
+-------mov = load 'ph.csv' using PigStorage(',') as (mid: int, title:chararray,uid: int,ratings:int,recom:chararray,as: int);
+
+q3 = filter mov by $0 == 400;
+q3a = group q3 all;
+q3b = foreach q3a generate SUM(q3.$3);
+dump q3b;
+
+STORE q3b INTO '/user/nakul';
+
+output--------
+
+1)pig -x mapreduce a3.pig;
+
+2)hdfs dfs -cat /user/nakul/*
+  hdfs dfs -cat /user/nakul/part-r-00000
+
+----------------------------------------------------------------------------------------------------------------------------------------
+
+HIVE
+
+hive>create database movies;
+
+hive>use movies;
+
+hive>create table mov(mid int, title string,uid int,ratings float,rec string,acs: int);
+
+hive>load data inpath '/ph.csv' into table mov;
+
+Query 1:-
+
+hive>select mid,uid, case when gid>0 then gid else-1 end gid,case rec when 'Y' then 1 else 0 end rec,acs from mov where acs in(2,4,5) limit 25;
+
+Query 2:-
+
+hive>select uid,mid,title from mov where acs == 2;
+
+Query 3:-
+
+hive>create table mov1(mid int,uid int,rec string,acs: int);
+
+Query 4:-
+
+hive>insert overwrite table mov1 select * from(select mid,uid, case when gid>0 then gid else-1 end gid,case rec when 'Y' then 1 else 0 end rec,acs from mov where acs in(2,4,5) limit 25) union_result;
+
+select * from mov1;
+
+
+
+
+public class WordCount {
+public static void main(String [] args) throws Exception
+{
+Configuration c=new Configuration();
+String[] files=new GenericOptionsParser(c,args).getRemainingArgs();
+Path input=new Path(files[0]);
+Path output=new Path(files[1]);
+Job j=new Job(c,"wordcount");
+j.setJarByClass(WordCount.class);
+j.setMapperClass(MapForWordCount.class);
+j.setReducerClass(ReduceForWordCount.class);
+j.setOutputKeyClass(Text.class);
+j.setOutputValueClass(IntWritable.class);
+FileInputFormat.addInputPath(j, input);
+FileOutputFormat.setOutputPath(j, output);
+System.exit(j.waitForCompletion(true)?0:1);
+}
+public static class MapForWordCount extends Mapper<LongWritable, Text, Text, IntWritable>{
+public void map(LongWritable key, Text value, Context con) throws IOException, InterruptedException
+{
+String line = value.toString();
+String[] words=line.split(",");
+for(String word: words )
+{
+  Text outputKey = new Text(word.toUpperCase().trim());
+  IntWritable outputValue = new IntWritable(1);
+  con.write(outputKey, outputValue);
+}
+}
+}
+public static class ReduceForWordCount extends Reducer<Text, IntWritable, Text, IntWritable>
+{
+public void reduce(Text word, Iterable<IntWritable> values, Context con) throws IOException, InterruptedException
+{
+int sum = 0;
+   for(IntWritable value : values)
+{
+sum += value.get();
+   }
+   con.write(word, new IntWritable(sum));
+}
+}
+}
